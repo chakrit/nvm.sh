@@ -27,7 +27,7 @@ exports = module.exports = (function() {
     }
 
     if (CURL_UA_RX.test(ua)) {
-      return hyperquest(NVM_SH).pipe(resp);
+      return request(NVM_SH).pipe(resp);
 
     } else { // assume generic web browser, send a redirect
       resp.writeHead(302, { 'Location': NVM_GITHUB });
