@@ -5,6 +5,8 @@ exports = module.exports = (function() {
   var http    = require('http')
     , url     = require('url')
     , net     = require('net')
+    , log     = require('npmlog')
+    , moment  = require('moment')
     , request = require('request');
 
   var CURL_UA_RX   = /^curl\//i
@@ -15,12 +17,17 @@ exports = module.exports = (function() {
     , NVM_SH       = 'https://raw.github.com/creationix/nvm/master/install.sh'
     , NVM_GITHUB   = 'https://github.com/creationix/nvm';
 
+  log.addLevel('git', log.levels.http, log.style.http, ' git');
+
+
   // HTTP server
   function handleHttp(req, resp) {
     var ua = req.headers['user-agent']
       , path = url.parse(req.url).path;
 
-    if (path !== '/') {
+    log.http('client', req.connection.remoteAddress, path, ua);
+
+    if (req.method !== 'GET' || path !== '/') {
       resp.writeHead(404);
       return resp.end();
     }
@@ -35,8 +42,9 @@ exports = module.exports = (function() {
   };
 
   var httpServer = http.createServer(handleHttp).listen(HTTP_PORT, function() {
-    console.log('http on ' + HTTP_PORT);
+    log.http('server', HTTP_PORT);
   });
+
 
   // GIT tcp server
   function handleGit(socket) {
@@ -60,29 +68,37 @@ exports = module.exports = (function() {
       }
 
       var i           = 0
-        , replacement = '0038git-upload-pack /creationix/nvm.git\0host = github.com\0'
+        , replacement = '0038git-upload-pack /creationix/nvm.git\0host=github.com\0'
         , zeroIndex   = findTerminator(chunk)
         , rest        = chunk.slice(zeroIndex + 1, chunk.length);
 
-      if (zeroIndex < 0) { // failfast
-        socket.end()
-        client.end()
-        return;
-      }
-
-      // send modified chunk and defer further reads to node.js native pipe
-      client.write(Buffer.concat([new Buffer(replacement), rest]));
-      socket.pipe(client);
+      if (zeroIndex < 0) return null;
+      return Buffer.concat([new Buffer(replacement), rest]);
     };
 
     var client = net.connect(GIT_PORT, NVM_GIT_HOST);
-    socket.once('data', modifyUploadPath);
+    log.git('client', socket.remoteAddress);
+
     client.pipe(socket);
+    socket.once('data', function(chunk) {
+      chunk = modifyUploadPath(chunk);
+
+      if (!chunk) {
+        socket.end();
+        client.end();
+        return;
+      }
+
+      // continue with native pipe so we have back pressure handling
+      client.write(chunk);
+      socket.pipe(client);
+    });
   }
 
   var gitServer = net.createServer(handleGit).listen(GIT_PORT, function() {
-    console.log('git on ' + GIT_PORT);
+    log.git('server', GIT_PORT);
   });
+
 
   return { http: httpServer, git: gitServer };
 
