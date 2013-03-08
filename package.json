@@ -12,7 +12,7 @@
   "license": "BSD",
   "dependencies": {
     "request": "~2.14.0",
-    "npmlog": "0.0.2",
-    "moment": "~2.0.0"
+    "moment": "~2.0.0",
+    "winston": "~0.6.2"
   }
 }
