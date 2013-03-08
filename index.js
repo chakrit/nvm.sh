@@ -7,13 +7,13 @@ exports = module.exports = (function() {
     , net     = require('net')
     , request = require('request');
 
-  var CURL_UA_RX      = /^curl\//i
-    , HTTP_PORT       = process.env.PORT || 8080
-    , GIT_PORT        = 9418
-    , NVM_GIT_PATH    = '/creationix/nvm.git'
-    , NVM_GIT_HOST    = 'github.com'
-    , NVM_SH          = 'https://raw.github.com/creationix/nvm/master/install.sh'
-    , NVM_GITHUB      = 'https://github.com/creationix/nvm';
+  var CURL_UA_RX   = /^curl\//i
+    , HTTP_PORT    = process.env.PORT || 8080
+    , GIT_PORT     = 9418
+    , NVM_GIT_PATH = '/creationix/nvm.git'
+    , NVM_GIT_HOST = 'github.com'
+    , NVM_SH       = 'https://raw.github.com/creationix/nvm/master/install.sh'
+    , NVM_GITHUB   = 'https://github.com/creationix/nvm';
 
   // HTTP server
   function handleHttp(req, resp) {
@@ -59,10 +59,10 @@ exports = module.exports = (function() {
         return -1;
       }
 
-      var i = 0
-        , replacement = '0038git-upload-pack /creationix/nvm.git\0host=github.com\0'
-        , zeroIndex = findTerminator(chunk)
-        , rest = chunk.slice(zeroIndex + 1, chunk.length);
+      var i           = 0
+        , replacement = '0038git-upload-pack /creationix/nvm.git\0host = github.com\0'
+        , zeroIndex   = findTerminator(chunk)
+        , rest        = chunk.slice(zeroIndex + 1, chunk.length);
 
       if (zeroIndex < 0) { // failfast
         socket.end()
