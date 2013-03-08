@@ -5,7 +5,7 @@ exports = module.exports = (function() {
   var http    = require('http')
     , url     = require('url')
     , net     = require('net')
-    , log     = require('npmlog')
+    , winston = require('winston')
     , moment  = require('moment')
     , request = require('request');
 
@@ -17,7 +17,18 @@ exports = module.exports = (function() {
     , NVM_SH       = 'https://raw.github.com/creationix/nvm/master/install.sh'
     , NVM_GITHUB   = 'https://github.com/creationix/nvm';
 
-  log.addLevel('git', log.levels.http, log.style.http, ' git');
+
+  // build custom logger
+  var opts =
+    { colorize  : true
+    , timestamp : function() { return moment().format('YYYY-MM-DDTHH:mm:ss.SSSZ'); }
+    , level     : 'git'
+    , levels    : { git: 7, http: 7 }
+    , colors    : { git: 'blue', http: 'cyan' }
+    };
+
+  var log = new winston.Logger(opts);
+  log.add(winston.transports.Console, opts);
 
 
   // HTTP server
@@ -25,7 +36,8 @@ exports = module.exports = (function() {
     var ua = req.headers['user-agent']
       , path = url.parse(req.url).path;
 
-    log.http('client', req.connection.remoteAddress, path, ua);
+    log.http('client ' + req.connection.remoteAddress +
+      ' ' + path + ' ' + ua);
 
     if (req.method !== 'GET' || path !== '/') {
       resp.writeHead(404);
@@ -77,7 +89,7 @@ exports = module.exports = (function() {
     };
 
     var client = net.connect(GIT_PORT, NVM_GIT_HOST);
-    log.git('client', socket.remoteAddress);
+    log.git('client ' + socket.remoteAddress);
 
     client.pipe(socket);
     socket.once('data', function(chunk) {
