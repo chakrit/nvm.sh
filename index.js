@@ -5,7 +5,7 @@ exports = module.exports = (function() {
   var http    = require('http')
     , url     = require('url')
     , net     = require('net')
-    , request = require('request');
+    , request = require('hyperquest');
 
   var CURL_UA_RX      = /^curl\//i
     , HTTP_PORT       = process.env.PORT || 8080
@@ -26,8 +26,13 @@ exports = module.exports = (function() {
       return resp.end();
     }
 
-    resp.writeHead(302, { 'Location': redir });
-    resp.end();
+    if (CURL_UA_RX.test(ua)) {
+      return hyperquest(NVM_SH).pipe(resp);
+
+    } else { // assume generic web browser, send a redirect
+      resp.writeHead(302, { 'Location': NVM_GITHUB });
+      return resp.end('redirect: ' + NVM_GITHUB);
+    }
   };
 
   var httpServer = http.createServer(handleHttp).listen(HTTP_PORT, function() {
