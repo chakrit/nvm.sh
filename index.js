@@ -18,8 +18,7 @@ exports = module.exports = (function() {
   // HTTP server
   function handleHttp(req, resp) {
     var ua = req.headers['user-agent']
-      , path = url.parse(req.url).path
-      , redir = CURL_UA_RX.test(ua) ? NVM_SH : NVM_GITHUB;
+      , path = url.parse(req.url).path;
 
     if (path !== '/') {
       resp.writeHead(404);
@@ -41,53 +40,44 @@ exports = module.exports = (function() {
 
   // GIT tcp server
   function handleGit(socket) {
-    var client = net.connect(GIT_PORT, NVM_GIT_HOST);
 
-    // modify git-upload-pack url
-    // assume first chunk always contains git-upload-pack
+    // modify git-upload-pack url to point to the official repo
+    // assume first chunk is always git-upload-pack
     function modifyUploadPath(chunk) {
-      var i = 0, zeroIndex = -1; // git protocols are \0-terminated
 
-      // find the second \0 which terminates the git-upload-pack command
-      for (i = 0; i < chunk.length; i++) {
-        if (chunk[i] !== 0) continue;
+      // find the second \0 which terminates the git-upload-pack command (and host= too)
+      function findTerminator(chunk) {
+        var i = 0, first = true;
 
-        if (zeroIndex === -1) {
-          zeroIndex = -2;
-        } else if (zeroIndex === -2) {
-          zeroIndex = i;
-          break;
+        for (i = 0; i < chunk.length; i++) {
+          if (chunk[i] !== 0) continue;
+          if (!first) return i;
+
+          first = false;
         }
+
+        return -1;
       }
 
-      if (zeroIndex < 0) {
-        socket.end()
-        client.end()
-        return console.log('unsupported mode');
-      }
-
-      console.log(zeroIndex);
-
-      var replacement = '0038git-upload-pack /creationix/nvm.git\0host=github.com\0'
+      var i = 0
+        , replacement = '0038git-upload-pack /creationix/nvm.git\0host=github.com\0'
+        , zeroIndex = findTerminator(chunk)
         , rest = chunk.slice(zeroIndex + 1, chunk.length);
 
-      // defer further reads to node.js native pipe
-      chunk = Buffer.concat([new Buffer(replacement), rest]);
+      if (zeroIndex < 0) { // failfast
+        socket.end()
+        client.end()
+        return;
+      }
 
-      client.write(chunk);
+      // send modified chunk and defer further reads to node.js native pipe
+      client.write(Buffer.concat([new Buffer(replacement), rest]));
       socket.pipe(client);
     };
 
+    var client = net.connect(GIT_PORT, NVM_GIT_HOST);
     socket.once('data', modifyUploadPath);
     client.pipe(socket);
-
-    var fs      = require('fs')
-      , outFile = fs.createWriteStream('/tmp/git.out')
-      , inFile  = fs.createWriteStream('/tmp/git.in')
-
-    socket.pipe(outFile);
-    socket.pipe(process.stdout);
-    client.pipe(inFile);
   }
 
   var gitServer = net.createServer(handleGit).listen(GIT_PORT, function() {
