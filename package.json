@@ -11,6 +11,6 @@
   "author": "Chakrit Wichian <service@chakrit.net> (http://chakrit.net)",
   "license": "BSD",
   "dependencies": {
-    "request": "~2.14.0"
+    "hyperquest": "0.0.2"
   }
 }
