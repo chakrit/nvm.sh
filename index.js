@@ -5,7 +5,7 @@ exports = module.exports = (function() {
   var http    = require('http')
     , url     = require('url')
     , net     = require('net')
-    , request = require('hyperquest');
+    , request = require('request');
 
   var CURL_UA_RX      = /^curl\//i
     , HTTP_PORT       = process.env.PORT || 8080
