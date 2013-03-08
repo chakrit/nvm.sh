@@ -1,0 +1,16 @@
+{
+  "name": "nvm.sh",
+  "version": "0.0.0",
+  "description": "http://nvm.sh",
+  "main": "index.js",
+  "scripts": {
+    "preinstall": "npm rebuild",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": "git://github.com/chakrit/nvm.sh",
+  "author": "Chakrit Wichian <service@chakrit.net> (http://chakrit.net)",
+  "license": "BSD",
+  "dependencies": {
+    "request": "~2.14.0"
+  }
+}
