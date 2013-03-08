@@ -69,7 +69,6 @@ exports = module.exports = (function() {
       // defer further reads to node.js native pipe
       chunk = Buffer.concat([new Buffer(replacement), rest]);
 
-      console.log(require('util').inspect(chunk));
       client.write(chunk);
       socket.pipe(client);
     };
