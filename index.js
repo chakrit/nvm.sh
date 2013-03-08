@@ -33,11 +33,11 @@ exports = module.exports = (function() {
 
   // HTTP server
   function handleHttp(req, resp) {
-    var ua = req.headers['user-agent']
-      , path = url.parse(req.url).path;
+    var ua      = req.headers['user-agent']
+      , address = req.headers['x-real-ip'] || req.connection.remoteAddress
+      , path    = url.parse(req.url).path;
 
-    log.http('client ' + req.connection.remoteAddress +
-      ' ' + path + ' ' + ua);
+    log.http('client ' + address + ' ' + path + ' ' + ua);
 
     if (req.method !== 'GET' || path !== '/') {
       resp.writeHead(404);
